@@ -15,6 +15,7 @@ import { MoreVertical, Trash2, Calendar, AlertCircle } from "lucide-react";
 import { Task } from "@/lib/types";
 import { useTasks } from "@/hook/use-task";
 import { cn, formatDate, isOverdue } from "@/lib/utils";
+import posthog from "posthog-js";
 
 interface TaskItemProps {
   task: Task;
@@ -23,6 +24,37 @@ interface TaskItemProps {
 export function TaskItem({ task }: TaskItemProps) {
   const { toggleTask, deleteTask } = useTasks();
   const [isHovered, setIsHovered] = useState(false);
+
+  const handleToggleTask = () => {
+    // Track task completion/uncompletion
+    if (task.completed) {
+      posthog.capture("task_uncompleted", {
+        task_id: task.id,
+        priority: task.priority,
+        category: task.category,
+      });
+    } else {
+      posthog.capture("task_completed", {
+        task_id: task.id,
+        priority: task.priority,
+        category: task.category,
+        had_due_date: !!task.dueDate,
+        was_overdue: isOverdue(task.dueDate),
+      });
+    }
+    toggleTask(task.id);
+  };
+
+  const handleDeleteTask = () => {
+    // Track task deletion - potential churn indicator if excessive
+    posthog.capture("task_deleted", {
+      task_id: task.id,
+      priority: task.priority,
+      category: task.category,
+      was_completed: task.completed,
+    });
+    deleteTask(task.id);
+  };
 
   const priorityColors = {
     low: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -57,7 +89,7 @@ export function TaskItem({ task }: TaskItemProps) {
         {/* Checkbox */}
         <Checkbox
           checked={task.completed}
-          onCheckedChange={() => toggleTask(task.id)}
+          onCheckedChange={handleToggleTask}
           className="mt-1"
         />
 
@@ -89,7 +121,7 @@ export function TaskItem({ task }: TaskItemProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={() => deleteTask(task.id)}
+                  onClick={handleDeleteTask}
                   className="text-red-600 dark:text-red-400"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />

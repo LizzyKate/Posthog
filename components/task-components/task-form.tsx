@@ -23,6 +23,7 @@ import {
 import { Plus } from "lucide-react";
 import { Priority, Category } from "@/lib/types";
 import { useTasks } from "@/hook/use-task";
+import posthog from "posthog-js";
 
 export function TaskForm() {
   const { addTask } = useTasks();
@@ -36,7 +37,11 @@ export function TaskForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      // Track form submission with empty title - UX friction indicator
+      posthog.capture("task_form_submitted_empty");
+      return;
+    }
 
     addTask({
       title: title.trim(),
@@ -45,6 +50,14 @@ export function TaskForm() {
       priority,
       category,
       dueDate: dueDate ? new Date(dueDate) : undefined,
+    });
+
+    // Track task creation - key conversion event
+    posthog.capture("task_created", {
+      priority,
+      category,
+      has_description: !!description.trim(),
+      has_due_date: !!dueDate,
     });
 
     // Reset form
@@ -56,8 +69,25 @@ export function TaskForm() {
     setOpen(false);
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      // Track dialog opening - top of task creation funnel
+      posthog.capture("add_task_dialog_opened");
+    }
+    setOpen(newOpen);
+  };
+
+  const handleCancel = () => {
+    // Track cancellation - potential friction indicator
+    posthog.capture("add_task_dialog_cancelled", {
+      had_title: !!title.trim(),
+      had_description: !!description.trim(),
+    });
+    setOpen(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="w-full sm:w-auto" size="lg">
           <Plus className="mr-2 h-4 w-4" />
@@ -220,7 +250,7 @@ export function TaskForm() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={handleCancel}
               className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600"
             >
               Cancel
