@@ -89,7 +89,12 @@ export function TaskForm() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-full sm:w-auto" size="lg">
+        <Button
+          className="w-full sm:w-auto"
+          size="lg"
+          id="add-task"
+          data-ph-capture-attribute="add-task-button"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Task
         </Button>
