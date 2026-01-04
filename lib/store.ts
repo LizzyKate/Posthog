@@ -72,33 +72,31 @@ const dateAwareStorage = {
   getItem: (name: string) => {
     const str = localStorage.getItem(name);
     if (!str) return null;
-
-    const data = JSON.parse(str);
-
-    // Convert date strings back to Date objects
-    if (data.state && data.state.tasks) {
-      data.state.tasks = data.state.tasks.map(
-        (
-          task: Omit<Task, "createdAt" | "completedAt" | "dueDate"> & {
-            createdAt: string | Date;
-            completedAt?: string | Date;
-            dueDate?: string | Date;
-          }
-        ) => ({
-          ...task,
-          createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
-          completedAt: task.completedAt
-            ? new Date(task.completedAt)
-            : undefined,
-          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-        })
-      );
-    }
-
-    return JSON.stringify(data);
+    return str;
   },
   setItem: (name: string, value: string) => {
-    localStorage.setItem(name, value);
+    const data = JSON.parse(value);
+
+    // Convert Date objects to ISO strings before storing
+    if (data.state && data.state.tasks) {
+      data.state.tasks = data.state.tasks.map((task: Task) => ({
+        ...task,
+        createdAt:
+          task.createdAt instanceof Date
+            ? task.createdAt.toISOString()
+            : task.createdAt,
+        completedAt:
+          task.completedAt instanceof Date
+            ? task.completedAt.toISOString()
+            : task.completedAt,
+        dueDate:
+          task.dueDate instanceof Date
+            ? task.dueDate.toISOString()
+            : task.dueDate,
+      }));
+    }
+
+    localStorage.setItem(name, JSON.stringify(data));
   },
   removeItem: (name: string) => {
     localStorage.removeItem(name);
@@ -200,6 +198,18 @@ export const useTaskStore = create<TaskStore>()(
     {
       name: "taskflow-storage",
       storage: createJSONStorage(() => dateAwareStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.tasks) {
+          state.tasks = state.tasks.map((task) => ({
+            ...task,
+            createdAt: new Date(task.createdAt),
+            completedAt: task.completedAt
+              ? new Date(task.completedAt)
+              : undefined,
+            dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+          }));
+        }
+      },
     }
   )
 );
