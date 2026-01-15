@@ -26,14 +26,10 @@ export function TaskItem({ task }: TaskItemProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleToggleTask = () => {
-    // Track task completion/uncompletion
-    if (task.completed) {
-      posthog.capture("task_uncompleted", {
-        task_id: task.id,
-        priority: task.priority,
-        category: task.category,
-      });
-    } else {
+    const willBeCompleted = !task.completed;
+
+    // Track task completion and uncompletion
+    if (willBeCompleted) {
       posthog.capture("task_completed", {
         task_id: task.id,
         priority: task.priority,
@@ -41,7 +37,14 @@ export function TaskItem({ task }: TaskItemProps) {
         had_due_date: !!task.dueDate,
         was_overdue: isOverdue(task.dueDate),
       });
+    } else {
+      posthog.capture("task_uncompleted", {
+        task_id: task.id,
+        priority: task.priority,
+        category: task.category,
+      });
     }
+
     toggleTask(task.id);
   };
 
