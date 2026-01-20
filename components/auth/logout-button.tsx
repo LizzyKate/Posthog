@@ -12,8 +12,7 @@ export function LogoutButton() {
   const handleLogout = () => {
     // 1. Capture logout event (before reset)
     posthog.capture("user_logged_out");
-
-    console.log("✅ User logged out, resetting PostHog"); // Debug log
+    og;
 
     // 2. Reset PostHog (unlink future events from this user)
     posthog.reset();

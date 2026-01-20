@@ -35,20 +35,21 @@ export function LoginForm() {
 
       // 2. Identify user in PostHog (direct call)
       posthog.identify(email, {
-        email: email,
+        email,
         name: name || undefined,
         identified_at: new Date().toISOString(),
       });
 
       // 3. Capture login event
       posthog.capture("user_logged_in", {
-        email: email,
+        email,
       });
 
       // 4. Redirect to tasks
       router.push("/tasks");
     } catch (error) {
       console.error("Login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
