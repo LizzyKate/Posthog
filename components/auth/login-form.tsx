@@ -1,8 +1,7 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import posthog from "posthog-js"; // ✅ Direct import
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,9 +21,8 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email) return;
 
     setIsLoading(true);
@@ -33,7 +31,7 @@ export function LoginForm() {
       // 1. Save user to localStorage
       const user = auth.login(email, name || undefined);
 
-      // 2. Identify user in PostHog (direct call)
+      // 2. Identify user in PostHog
       posthog.identify(email, {
         email,
         name: name || undefined,
@@ -45,7 +43,14 @@ export function LoginForm() {
         email,
       });
 
-      // 4. Redirect to tasks
+      //  4. RELOAD FEATURE FLAGS - Wait for them to load!
+      await posthog.reloadFeatureFlags();
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Feature flags loaded!");
+      }
+
+      // 5. Redirect to tasks (only after flags are ready)
       router.push("/tasks");
     } catch (error) {
       console.error("Login error:", error);
@@ -80,7 +85,6 @@ export function LoginForm() {
                 disabled={isLoading}
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="name">Name (optional)</Label>
               <Input
@@ -92,7 +96,6 @@ export function LoginForm() {
                 disabled={isLoading}
               />
             </div>
-
             <Button
               type="submit"
               className="w-full"
@@ -100,7 +103,6 @@ export function LoginForm() {
             >
               {isLoading ? "Logging in..." : "Continue"}
             </Button>
-
             <p className="text-xs text-muted-foreground text-center mt-4">
               This is a demo app for testing PostHog. No password required!
             </p>
