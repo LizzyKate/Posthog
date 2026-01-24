@@ -46,7 +46,9 @@ export function LoginForm() {
       // 🎯 4. RELOAD FEATURE FLAGS - Wait for them to load!
       await posthog.reloadFeatureFlags();
 
-      console.log("Feature flags loaded!");
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Feature flags loaded!");
+      }
 
       // 5. Redirect to tasks (only after flags are ready)
       router.push("/tasks");

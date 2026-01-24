@@ -40,7 +40,9 @@ export function TaskItem({ task }: TaskItemProps) {
   // 🎯 FEATURE FLAG CHECK - Inline Task Editing
   const canEditTasks = posthogClient.isFeatureEnabled("inline-task-editing");
   const showEdit = canEditTasks === true;
-  console.log("Inline Task Editing Enabled:", canEditTasks);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Inline Task Editing Enabled:", canEditTasks);
+  }
 
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
