@@ -39,6 +39,7 @@ export function TaskItem({ task }: TaskItemProps) {
 
   // 🎯 FEATURE FLAG CHECK - Inline Task Editing
   const canEditTasks = posthogClient.isFeatureEnabled("inline-task-editing");
+  const showEdit = canEditTasks === true;
   console.log("Inline Task Editing Enabled:", canEditTasks);
 
   // Editing state
@@ -258,7 +259,7 @@ export function TaskItem({ task }: TaskItemProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {/* 🎯 EDIT OPTION - Only shows if feature flag is enabled */}
-                    {canEditTasks && (
+                    {showEdit && (
                       <DropdownMenuItem
                         onClick={handleStartEdit}
                         data-ph-capture-attribute="task-edit-menu-item"
