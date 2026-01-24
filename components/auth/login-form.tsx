@@ -43,7 +43,7 @@ export function LoginForm() {
         email,
       });
 
-      // 🎯 4. RELOAD FEATURE FLAGS - Wait for them to load!
+      //  4. RELOAD FEATURE FLAGS - Wait for them to load!
       await posthog.reloadFeatureFlags();
 
       if (process.env.NODE_ENV !== "production") {
