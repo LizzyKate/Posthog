@@ -1,6 +1,6 @@
 "use client";
 
-import { SetStateAction, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,6 @@ export function TaskItem({ task }: TaskItemProps) {
   const handleToggleTask = () => {
     const willBeCompleted = !task.completed;
 
-    // Track task completion and uncompletion
     if (willBeCompleted) {
       posthog.capture("task_completed", {
         task_id: task.id,
@@ -75,7 +74,6 @@ export function TaskItem({ task }: TaskItemProps) {
   };
 
   const handleDeleteTask = () => {
-    // Track task deletion - potential churn indicator if excessive
     posthog.capture("task_deleted", {
       task_id: task.id,
       priority: task.priority,
@@ -90,7 +88,6 @@ export function TaskItem({ task }: TaskItemProps) {
     setEditedTitle(task.title);
     setEditedDescription(task.description || "");
 
-    // Track when user starts editing (FEATURE FLAG EVENT)
     posthog.capture("task_edit_started", {
       task_id: task.id,
       priority: task.priority,
@@ -109,13 +106,15 @@ export function TaskItem({ task }: TaskItemProps) {
 
       updateTask(task.id, updates);
 
-      // Track successful edit (FEATURE FLAG EVENT)
+      const oldDescription = task.description ?? "";
+      const newDescription = editedDescription.trim();
+
       posthog.capture("task_edited", {
         task_id: task.id,
         old_title: task.title,
         new_title: editedTitle.trim(),
         title_changed: task.title !== editedTitle.trim(),
-        description_changed: task.description !== editedDescription.trim(),
+        description_changed: oldDescription !== newDescription,
         feature_flag: "inline-task-editing",
       });
     }
@@ -127,7 +126,6 @@ export function TaskItem({ task }: TaskItemProps) {
     setEditedDescription(task.description || "");
     setIsEditing(false);
 
-    // Track edit cancellation (FEATURE FLAG EVENT)
     posthog.capture("task_edit_cancelled", {
       task_id: task.id,
       feature_flag: "inline-task-editing",
@@ -135,8 +133,7 @@ export function TaskItem({ task }: TaskItemProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && e.metaKey) {
-      // Cmd/Ctrl + Enter to save
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       handleSaveEdit();
     } else if (e.key === "Escape") {
       handleCancelEdit();
@@ -173,7 +170,6 @@ export function TaskItem({ task }: TaskItemProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-start gap-3">
-        {/* Checkbox */}
         <Checkbox
           checked={task.completed}
           onCheckedChange={handleToggleTask}
@@ -181,10 +177,8 @@ export function TaskItem({ task }: TaskItemProps) {
           disabled={isEditing}
         />
 
-        {/* Task Content */}
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            // 📝 EDIT MODE - Only visible when editing
             <div className="space-y-3">
               <div>
                 <Input
@@ -199,9 +193,7 @@ export function TaskItem({ task }: TaskItemProps) {
               <div>
                 <Textarea
                   value={editedDescription}
-                  onChange={(e: {
-                    target: { value: SetStateAction<string> };
-                  }) => setEditedDescription(e.target.value)}
+                  onChange={(e) => setEditedDescription(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Task description (optional)..."
                   className="text-sm resize-none"
@@ -228,7 +220,6 @@ export function TaskItem({ task }: TaskItemProps) {
               </div>
             </div>
           ) : (
-            // 👀 VIEW MODE - Default display
             <>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
@@ -247,7 +238,6 @@ export function TaskItem({ task }: TaskItemProps) {
                   )}
                 </div>
 
-                {/* Actions Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -260,7 +250,6 @@ export function TaskItem({ task }: TaskItemProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {/* 🎯 EDIT OPTION - Only shows if feature flag is enabled */}
                     {showEdit && (
                       <DropdownMenuItem
                         onClick={handleStartEdit}
@@ -281,7 +270,6 @@ export function TaskItem({ task }: TaskItemProps) {
                 </DropdownMenu>
               </div>
 
-              {/* Badges and Metadata */}
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <Badge
                   className={priorityColors[task.priority]}
