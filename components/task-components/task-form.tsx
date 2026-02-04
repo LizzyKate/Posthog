@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,12 +34,20 @@ export function TaskForm() {
   const [category, setCategory] = useState<Category>("work");
   const [dueDate, setDueDate] = useState("");
 
+  // A/B Test: Button text experiment
+  const buttonText = useMemo(() => {
+    const variant = posthog.getFeatureFlag("button-text-experiment");
+    return variant === "test" ? "Create New Task" : "Add Task"; // control
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim()) {
       // Track form submission with empty title - UX friction indicator
-      posthog.capture("task_form_submitted_empty");
+      posthog.capture("task_form_submitted_empty", {
+        button_variant: buttonText,
+      });
       return;
     }
 
@@ -58,6 +66,7 @@ export function TaskForm() {
       category,
       has_description: !!description.trim(),
       has_due_date: !!dueDate,
+      button_text: buttonText, // Track which variant they saw
     });
 
     // Reset form
@@ -72,7 +81,9 @@ export function TaskForm() {
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       // Track dialog opening - top of task creation funnel
-      posthog.capture("add_task_dialog_opened");
+      posthog.capture("add_task_dialog_opened", {
+        button_text: buttonText, // Track which button text led to this
+      });
     }
     setOpen(newOpen);
   };
@@ -82,6 +93,7 @@ export function TaskForm() {
     posthog.capture("add_task_dialog_cancelled", {
       had_title: !!title.trim(),
       had_description: !!description.trim(),
+      button_text: buttonText,
     });
     setOpen(false);
   };
@@ -96,10 +108,10 @@ export function TaskForm() {
           data-ph-capture-attribute="add-task-button"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Task
+          {buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-800 border-2 shadow-2xl">
+      <DialogContent className="sm:max-w-125 bg-white dark:bg-slate-800 border-2 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl text-slate-900 dark:text-white">
             Create New Task
